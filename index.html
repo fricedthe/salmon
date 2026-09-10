@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Astro Coin Clicker - Ultimate Speed & Infinite Edition</title>
+   <style>
+       :root {
+           --bg-color: #050814;
+           --panel-bg: rgba(12, 16, 38, 0.9);
+           --border-color: #1e295d;
+           --text-main: #f0f3ff;
+           --text-sub: #7a8fa9;
+           --astro-gold: #ffd700;
+           --btn-gold: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+          
+           --common-color: #a6b8d4;
+           --rare-color: #1e88e5;
+           --epic-color: #8e24aa;
+           --legendary-color: #f39c12;
+           --mystic-color: #e74c3c;
+           --secret-color: #1abc9c;
+           --eternal-color: #e67e22;
+       }
+
+
+       * {
+           box-sizing: border-box;
+           margin: 0;
+           padding: 0;
+           user-select: none;
+           font-family: 'Helvetica Neue', Arial, sans-serif;
+       }
+
+
+       body {
+           background-color: var(--bg-color);
+           background-image:
+               radial-gradient(circle at 10% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+               radial-gradient(circle at 90% 80%, rgba(0, 67, 156, 0.15) 0%, transparent 50%);
+           color: var(--text-main);
+           display: flex;
+           height: 100vh;
+           overflow: hidden;
+       }
+
+
+       .left-panel {
+           flex: 1;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           padding: 20px;
+           position: relative;
+           border-right: 2px solid var(--border-color);
+       }
+
+
+       .autoclicker-zone {
+           position: absolute;
+           top: 20px;
+           left: 20px;
+           background: rgba(0, 0, 0, 0.5);
+           border: 1px solid var(--border-color);
+           padding: 12px 16px;
+           border-radius: 8px;
+           display: flex;
+           flex-direction: column;
+           gap: 6px;
+           z-index: 100;
+       }
+       .ac-header-row {
+           display: flex;
+           align-items: center;
+           gap: 8px;
+       }
+       .ac-label {
+           font-size: 0.8rem;
+           color: var(--text-sub);
+           font-weight: bold;
+       }
+       .switch {
+           position: relative;
+           display: inline-block;
+           width: 44px;
+           height: 22px;
+       }
+       .switch input { opacity: 0; width: 0; height: 0; }
+       .slider {
+           position: absolute;
+           cursor: pointer;
+           top: 0; left: 0; right: 0; bottom: 0;
+           background-color: #141933;
+           transition: .3s;
+           border-radius: 22px;
+           border: 1px solid var(--border-color);
+       }
+       .slider:before {
+           position: absolute;
+           content: "";
+           height: 14px; width: 14px;
+           left: 3px; bottom: 3px;
+           background-color: white;
+           transition: .3s;
+           border-radius: 50%;
+       }
+       input:checked + .slider { background-color: var(--astro-gold); }
+       input:checked + .slider:before { transform: translateX(22px); }
+
+
+       .stats-container {
+           text-align: center;
+           margin-bottom: 20px;
+           z-index: 10;
+       }
+       .coin-count {
+           font-size: 3.5rem;
+           font-weight: bold;
+           color: var(--astro-gold);
+           text-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
+       }
+       .stats-sub {
+           font-size: 0.95rem;
+           color: var(--text-sub);
+           margin: 4px 0;
+       }
+
+
+       .coin-stage {
+           position: relative;
+           width: 320px;
+           height: 320px;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           z-index: 10;
+       }
+
+
+       .coin-wrapper {
+           position: relative;
+           cursor: pointer;
+           outline: none;
+           z-index: 20;
+       }
+       .astro-coin {
+           width: 220px; height: 220px;
+           border-radius: 50%;
+           background: radial-gradient(circle at 35% 35%, #ffd700 0%, #cca100 50%, #856600 100%);
+           box-shadow:
+               0 0 0 8px #221c02,
+               0 15px 35px rgba(0,0,0,0.7),
+               inset 0 4px 6px rgba(255,255,255,0.4),
+               inset 0 -10px 15px rgba(0,0,0,0.5);
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           position: relative;
+           transition: transform 0.05s ease;
+       }
+       .astro-coin.pressed {
+           transform: scale(0.95);
+       }
+      
+       .symbol-grid {
+           display: grid;
+           grid-template-columns: repeat(2, 1fr);
+           gap: 15px;
+           justify-items: center;
+           align-items: center;
+       }
+       .ps-symbol {
+           font-size: 2.2rem;
+           font-weight: bold;
+           color: #221c02;
+           text-shadow: 0 1px 1px rgba(255,255,255,0.2);
+           line-height: 1;
+       }
+
+
+       .space-hint {
+           position: absolute;
+           bottom: 25px;
+           color: var(--text-sub);
+           font-size: 0.85rem;
+           background: rgba(0,0,0,0.5);
+           padding: 6px 14px;
+           border-radius: 20px;
+           border: 1px solid var(--border-color);
+       }
+
+
+       .right-panel {
+           width: 520px;
+           background-color: var(--panel-bg);
+           backdrop-filter: blur(12px);
+           display: flex;
+           flex-direction: column;
+           height: 100%;
+           border-left: 2px solid var(--border-color);
+       }
+
+
+       .reverse-area {
+           background: rgba(4, 6, 18, 0.95);
+           border-bottom: 2px solid var(--border-color);
+           padding: 16px;
+           display: flex;
+           flex-direction: column;
+           gap: 10px;
+       }
+       .reverse-status-row {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+       }
+       .reverse-info-title { font-weight: bold; font-size: 1.05rem; }
+       .reverse-btn {
+           background: var(--btn-gold);
+           border: 1px solid #fff;
+           color: #111;
+           font-weight: bold;
+           padding: 8px 16px;
+           border-radius: 6px;
+           cursor: pointer;
+           transition: all 0.2s;
+           font-size: 0.85rem;
+       }
+       .reverse-btn.disabled {
+           background: #141933;
+           border-color: #242b4d;
+           color: #4f5a84;
+           cursor: not-allowed;
+       }
+       .reverse-condition {
+           font-size: 0.85rem;
+           color: var(--text-sub);
+       }
+
+
+       .tab-nav {
+           display: flex;
+           background: rgba(0,0,0,0.4);
+           border-bottom: 1px solid var(--border-color);
+       }
+       .tab-btn {
+           flex: 1;
+           padding: 12px 4px;
+           background: transparent;
+           border: none;
+           color: var(--text-sub);
+           font-weight: bold;
+           font-size: 0.8rem;
+           cursor: pointer;
+           transition: all 0.2s;
+           text-align: center;
+       }
+       .tab-btn.active {
+           color: var(--text-main);
+           background: rgba(255, 215, 0, 0.1);
+           border-bottom: 3px solid var(--astro-gold);
+       }
+
+
+       .tab-content {
+           flex: 1;
+           overflow-y: auto;
+           padding: 16px;
+           display: none;
+       }
+       .tab-content.active { display: block; }
+
+
+       .shop-item {
+           background: rgba(20, 26, 48, 0.4);
+           border: 1px solid var(--border-color);
+           border-radius: 8px;
+           padding: 12px;
+           margin-bottom: 10px;
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+       }
+       .item-info { display: flex; flex-direction: column; gap: 4px; }
+       .item-title { font-weight: bold; font-size: 0.95rem; color: #fff; }
+       .item-desc { font-size: 0.8rem; color: var(--text-sub); }
+       .item-level { font-size: 0.75rem; color: var(--astro-gold); font-weight: bold; }
+       .buy-btn {
+           background: #00439c;
+           border: 1px solid #2196f3;
+           color: white;
+           font-weight: bold;
+           padding: 8px 12px;
+           border-radius: 6px;
+           cursor: pointer;
+           min-width: 110px;
+           text-align: center;
+           font-size: 0.85rem;
+       }
+       .buy-btn:disabled {
+           background: #1c223d;
+           border-color: #2e375b;
+           color: #55618c;
+           cursor: not-allowed;
+       }
+
+
+       .gacha-container {
+           display: flex;
+           flex-direction: column;
+           gap: 12px;
+       }
+       .egg-selector-label {
+           font-weight: bold;
+           font-size: 0.9rem;
+           color: var(--text-main);
+       }
+       .egg-select-box {
+           width: 100%;
+           background: #10152e;
+           border: 1px solid var(--border-color);
+           color: #fff;
+           padding: 10px;
+           border-radius: 6px;
+           font-weight: bold;
+           outline: none;
+       }
+       .egg-select-box option:disabled {
+           color: #4f5a84;
+           background: #080c1f;
+       }
+      
+       .gacha-panel {
+           background: rgba(0,0,0,0.3);
+           border: 1px solid var(--border-color);
+           border-radius: 8px;
+           padding: 16px;
+           text-align: center;
+       }
+       .pity-info {
+           font-size: 0.85rem;
+           color: var(--text-sub);
+           margin-bottom: 4px;
+       }
+       .price-info {
+           font-size: 0.85rem;
+           color: var(--astro-gold);
+           margin-bottom: 12px;
+       }
+       .gacha-action-row {
+           display: flex;
+           gap: 10px;
+       }
+       .gacha-trigger {
+           flex: 1;
+           padding: 10px;
+           border-radius: 6px;
+           font-weight: bold;
+           cursor: pointer;
+           border: none;
+           color: white;
+           font-size: 0.9rem;
+       }
+       .btn-single { background: #2e7d32; }
+       .btn-multi { background: #c62828; }
+      
+       .view-odds-btn {
+           background: transparent;
+           border: none;
+           color: var(--astro-gold);
+           text-decoration: underline;
+           font-size: 0.8rem;
+           cursor: pointer;
+           margin-top: 10px;
+       }
+      
+       .gacha-result-well {
+           margin-top: 12px;
+           min-height: 60px;
+           max-height: 160px;
+           overflow-y: auto;
+           padding: 10px;
+           background: rgba(0,0,0,0.5);
+           border-radius: 6px;
+           font-size: 0.85rem;
+           text-align: left;
+           border: 1px dashed var(--border-color);
+       }
+
+
+       .slots-summary {
+           background: rgba(4, 6, 18, 0.6);
+           border: 1px solid var(--border-color);
+           padding: 10px 14px;
+           border-radius: 8px;
+           margin-bottom: 12px;
+           font-size: 0.85rem;
+       }
+       .slots-title { font-weight: bold; color: var(--text-main); margin-bottom: 4px; }
+       .slots-stats { color: var(--text-sub); }
+
+
+       .pet-list-scroll {
+           display: flex;
+           flex-direction: column;
+           gap: 8px;
+       }
+       .pet-row-card {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           padding: 10px;
+           background: rgba(20, 26, 48, 0.3);
+           border-radius: 6px;
+           border-left: 4px solid #fff;
+       }
+       .pet-meta { display: flex; flex-direction: column; gap: 2px; }
+       .pet-name-line { font-weight: bold; font-size: 0.9rem; }
+       .pet-effect-line { font-size: 0.75rem; color: var(--text-sub); }
+       .pet-actions { display: flex; gap: 6px; }
+       .p-btn {
+           padding: 6px 10px;
+           border-radius: 4px;
+           border: none;
+           font-weight: bold;
+           font-size: 0.75rem;
+           cursor: pointer;
+           color: #fff;
+       }
+       .btn-equip { background: #00439c; }
+       .btn-unequip { background: #2e7d32; }
+       .btn-sell { background: #b8860b; color: #fff; }
+
+
+       .click-float {
+           position: absolute; pointer-events: none; font-weight: bold; font-size: 1.4rem;
+           animation: floatUp 0.6s ease-out forwards; z-index: 100; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+       }
+       @keyframes floatUp {
+           0% { opacity: 1; transform: translateY(0) scale(1); }
+           100% { opacity: 0; transform: translateY(-50px) scale(0.8); }
+       }
+
+
+       /* モーダルポップアップ */
+       .modal-overlay {
+           position: fixed; top:0; left:0; width:100vw; height:100vh;
+           background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+           display: flex; align-items: center; justify-content: center;
+           z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+       }
+       .modal-overlay.active { opacity: 1; pointer-events: auto; }
+       .modal-box {
+           width: 440px; max-height: 80vh; background: #0c1026;
+           border: 2px solid var(--border-color); border-radius: 12px;
+           display: flex; flex-direction: column; overflow: hidden;
+           box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+       }
+       .modal-header {
+           padding: 14px; background: rgba(0,0,0,0.3);
+           display: flex; justify-content: space-between; align-items: center;
+           border-bottom: 1px solid var(--border-color);
+       }
+       .modal-title { font-weight: bold; font-size: 1.05rem; }
+       .modal-close-x { font-size: 1.2rem; cursor: pointer; color: var(--text-sub); }
+       .modal-body { padding: 16px; overflow-y: auto; flex: 1; font-size: 0.85rem; }
+       .odds-row {
+           display: flex; justify-content: space-between; padding: 6px 0;
+           border-bottom: 1px solid rgba(255,255,255,0.05);
+       }
+   </style>
+</head>
+<body>
+
+
+   <!-- 左エリア -->
+   <div class="left-panel">
+       <div class="autoclicker-zone">
+           <div class="ac-header-row">
+               <span class="ac-label">AUTO CLICKER</span>
+               <label class="switch">
+                   <input type="checkbox" id="autoClickToggle">
+                   <span class="slider"></span>
+               </label>
+           </div>
+           <div class="ac-label" id="acSpeedLabel" style="font-size:0.7rem; color:var(--astro-gold);">速度: 秒間10.0回</div>
+       </div>
+
+
+       <div class="stats-container">
+           <div class="coin-count" id="coinDisplay">0.00 K</div>
+           <div class="stats-sub" id="cpsDisplay">秒間自動生産 (CPS): 0.00 K</div>
+           <div class="stats-sub" id="cpcDisplay">1クリック: 1.00 K</div>
+           <div class="stats-sub" id="multiplierDisplay">永続生産倍率: x1</div>
+           <div class="stats-sub" id="reversesDisplay">再生回数: 0 回</div>
+       </div>
+
+
+       <div class="coin-stage">
+           <div class="coin-wrapper" id="coinButton">
+               <div class="astro-coin" id="coinVisual">
+                   <div class="symbol-grid">
+                       <span class="ps-symbol">○</span>
+                       <span class="ps-symbol">△</span>
+                       <span class="ps-symbol">✕</span>
+                       <span class="ps-symbol">□</span>
+                   </div>
+               </div>
+           </div>
+       </div>
+      
+       <div class="space-hint">⌨ [スペースキー] 長押しで超高速自動連打！</div>
+   </div>
+
+
+   <!-- 右エリア -->
+   <div class="right-panel">
+       <!-- 宇宙再生エリア -->
+       <div class="reverse-area">
+           <div class="reverse-status-row">
+               <span class="reverse-info-title">🌌 宇宙再生（リバース）実行</span>
+               <button class="reverse-btn disabled" id="reverseBtn" onclick="game.executeReverse()">リバース実行</button>
+           </div>
+           <div class="reverse-condition" id="reverseCondition">リバース条件: 読込中...</div>
+       </div>
+
+
+       <!-- タブナビゲーション -->
+       <div class="tab-nav">
+           <button class="tab-btn active" onclick="game.switchTab('upgrades')">無限強化</button>
+           <button class="tab-btn" onclick="game.switchTab('gacha')">卵・ガチャ</button>
+           <button class="tab-btn" onclick="game.switchTab('petsList')">相棒一覧</button>
+           <button class="tab-btn" onclick="game.switchTab('dex')">図鑑 (<span id="dexPercent">0</span>%)</button>
+       </div>
+
+
+       <!-- タブ: 無限強化 -->
+       <div class="tab-content active" id="tab-upgrades">
+           <div id="infiniteUpgradesContainer"></div>
+       </div>
+
+
+       <!-- タブ: ガチャ -->
+       <div class="tab-content" id="tab-gacha">
+           <div class="gacha-container">
+               <div class="egg-selector-label">🥚 **卵を選択してください（全25種）:**</div>
+               <select class="egg-select-box" id="eggSelector" onchange="game.onEggChange()"></select>
+
+
+               <div class="gacha-panel">
+                   <div class="pity-info" id="gachaPity">初回特典: あと50回で最高レアEternal確定！</div>
+                   <div class="price-info" id="gachaCostDisplay">価格: 1回 1.00 K コイン</div>
+                   <div class="gacha-action-row">
+                       <button class="gacha-trigger btn-single" onclick="game.buyGacha(1)">1回引く</button>
+                       <button class="gacha-trigger btn-multi" onclick="game.buyGacha(10)">10回連続</button>
+                   </div>
+                   <button class="view-odds-btn" onclick="game.openOddsModal()">提供割合・確率表を見る</button>
+                   <div class="gacha-result-well" id="gachaResult">ガチャ結果がここに表示されます</div>
+               </div>
+           </div>
+       </div>
+
+
+       <!-- タブ: 相棒一覧 -->
+       <div class="tab-content" id="tab-petsList">
+           <div class="slots-summary">
+               <div class="slots-title" id="slotTitleDisplay">📌 **装着枠: 0 / 4**</div>
+               <div class="slots-stats" id="slotStatsDisplay">合計倍率ボーナス: +0% | 合計自動生産: 0.00 K CPS</div>
+           </div>
+           <div class="pet-list-scroll" id="ownedPetsContainer"></div>
+       </div>
+
+
+       <!-- タブ: 図鑑 -->
+       <div class="tab-content" id="tab-dex">
+           <div class="slots-summary">
+               <div class="slots-title" id="dexProgressTitle">📊 **図鑑収集率: 0%** (0 / 142)</div>
+           </div>
+           <div class="pet-list-scroll" id="dexContainer"></div>
+       </div>
+   </div>
+
+
+   <!-- 提供割合モーダル -->
+   <div class="modal-overlay" id="oddsModal">
+       <div class="modal-box">
+           <div class="modal-header">
+               <span class="modal-title">ガチャ提供割合</span>
+               <span class="modal-close-x" onclick="game.closeOddsModal()">✕</span>
+           </div>
+           <div class="modal-body" id="oddsModalBody"></div>
+       </div>
+   </div>
+
+
+   <script>
+       // --- 英語インフレ単位ルール定義 (1,000から完全移行) ---
+       const UNITS = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
+       function generateUnitSymbol(index) {
+           if (index < UNITS.length) return UNITS[index];
+           const baseIdx = index - UNITS.length;
+           const subUnits = ["UDc", "DDc", "TDc", "QaDc", "QiDc", "SxDc", "SpDc", "OcDc", "NoDc", "Vg", "UVg", "DVg", "TVg"];
+           if (baseIdx < subUnits.length) return subUnits[baseIdx];
+           return "e" + (index * 3);
+       }
+
+
+       function formatNumber(num) {
+           if (num === undefined || num === null || isNaN(num)) return "0.00";
+           if (num < 1000) return num.toFixed(2);
+           const i = Math.floor(Math.log10(num) / 3);
+           const sym = generateUnitSymbol(i);
+           const val = num / Math.pow(10, i * 3);
+           return val.toFixed(2) + " " + sym;
+       }
+
+
+       // --- レア度定義 ---
+       const RARITIES = {
+           COMMON: { name: 'Common', color: 'var(--common-color)' },
+           RARE: { name: 'Rare', color: 'var(--rare-color)' },
+           EPIC: { name: 'Epic', color: 'var(--epic-color)' },
+           LEGENDARY: { name: 'Legendary', color: 'var(--legendary-color)' },
+           MYSTIC: { name: 'Mystic', color: 'var(--mystic-color)' },
+           SECRET: { name: 'Secret', color: 'var(--secret-color)' },
+           ETERNAL: { name: 'Eternal', color: 'var(--eternal-color)' }
+       };
+
+
+       // --- 固有のカッコいい名前を持つ被りなしEternal全30体リスト ---
+       const ETERNAL_NAMES = [
+           "神滅龍バハムート・ゼロ", "創世神アルセウス・ノヴァ", "終焉王クロノス・エンド", "深淵の主リヴァイアサン",
+           "天帝ゼウス・マキシマム", "冥王ハデス・タナトス", "星蝕神ルシファー・アルター", "熾天使ミカエル・レガリア",
+           "虚空王ヴォイド・ジェネシス", "極光鳥フェニックス・レイ", "時空獣クロノス・ディザスター", "覇王剣ジークフリッド",
+           "魔王サタン・インフェルノ", "太陽神ラー・イリュージョン", "戦神オーディン・ヴァルハラ", "邪神ロキ・トリックマスター",
+           "巨神タイタン・ギガント", "精霊王エグゼクシオン", "創滅神カオス・インフィニティ", "黙示録王アポカリプス",
+           "絶対神オーヴァーロード", "星屑天マジェスティック", "死霊王ネクロマンサー", "幻影獣キマイラ・エターナル",
+           "万物神オムニポテント", "異界主アザトース・コア", "次元竜ディメンション・ゼロ", "始祖竜プロト・レヴィア",
+           "精霊后ティターニア・ルナ", "🐾 【終焉】ジ・エンド・オブ・アストロノヴァ"
+       ];
+
+
+       // --- 全142体のペットデータベース生成 ---
+       const ALL_PETS = [];
+      
+       // Common 15体
+       for(let i=1; i<=15; i++) ALL_PETS.push({ id: `c_${i}`, name: `アストロノーム型助手 №${i}`, rarity: 'COMMON', cpc: i * 2, cps: i * 5 });
+       // Rare 15体
+       for(let i=1; i<=15; i++) ALL_PETS.push({ id: `r_${i}`, name: `星間ドローン Mark-${i}`, rarity: 'RARE', cpc: i * 20, cps: i * 50 });
+       // Epic 15体
+       for(let i=1; i<=15; i++) ALL_PETS.push({ id: `e_${i}`, name: `クエーサー精霊 Type-${i}`, rarity: 'EPIC', cpc: i * 150, cps: i * 400 });
+       // Legendary 15体
+       for(let i=1; i<=15; i++) ALL_PETS.push({ id: `l_${i}`, name: `銀河守護ゴーレム V${i}`, rarity: 'LEGENDARY', cpc: i * 1200, cps: i * 3000 });
+       // Mystic 15体
+       for(let i=1; i<=15; i++) ALL_PETS.push({ id: `m_${i}`, name: `次元超越キツネ 《星幻${i}》`, rarity: 'MYSTIC', cpc: i * 10000, cps: i * 25000 });
+       // Secret 37体 (合計142体にするため調整)
+       for(let i=1; i<=36; i++) ALL_PETS.push({ id: `s_${i}`, name: `【秘奥】ヴォイド・ハウンド幻影-${i}型`, rarity: 'SECRET', cpc: i * 80000, cps: i * 200000 });
+       ALL_PETS.push({ id: `s_37`, name: `🐾 【極秘】インフィニティ・オメガ・キャット`, rarity: 'SECRET', cpc: 5000000, cps: 15000000 });
+       // Eternal 30体 (名前被りなし固有名称)
+       for(let i=0; i<30; i++) {
+           ALL_PETS.push({
+               id: `et_${i+1}`,
+               name: ETERNAL_NAMES[i],
+               rarity: 'ETERNAL',
+               cpc: (i+1) * 8000000,
+               cps: (i+1) * 25000000
+           });
+       }
+
+
+       // --- 全25種の卵定義 (卵ごとに完全にバラけた固有排出プール) ---
+       const EGGS_DATA = [];
+       const EGG_NAMES = [
+           "ビギナー・アストロエッグ", "コスモ・ハイブリッドエッグ", "スターライト・エッグ", "ネビュラ・エクスプロアエッグ",
+           "ギャラクシー・コアエッグ", "メテオ・クライシスエッグ", "オーロラ・シマーエッグ", "ソーラー・フレアエッグ",
+           "クエーサー・ヴォイドエッグ", "ブラックホール・シンギュラリティエッグ", "ディメンション・マトリクスエッグ", "ワームホール・トラバースエッグ",
+           "タイム・ワープエッグ", "ライトスピード・パルスエッグ", "インフィニティ・オメガエッグ", "ノヴァ・インキュベーターエッグ",
+           "スーパーノヴァ・バーストエッグ", "デス・プラネットエッグ", "サテライト・オービットエッグ", "プラズマ・ストームエッグ",
+           "コメット・テイルエッグ", "ダークマター・ミステリーエッグ", "アンチマター・リアクターエッグ", "ゼウス・インフィニティエッグ",
+           "アストロノヴァ・エターナルエッグ"
+       ];
+
+
+       for(let i=0; i<25; i++) {
+           let requiredReverses = 0;
+           if (i > 0) requiredReverses = Math.floor(Math.pow(i, 1.3));
+          
+           let baseCost = 1000 * Math.pow(3, i);
+          
+           // 卵ごとの固有プール選定 (前後数グループからランダムに偏りを持たせてバラけさせる)
+           let poolIds = [];
+           ALL_PETS.forEach((pet, index) => {
+               let factor = Math.abs((index / ALL_PETS.length) - (i / 24));
+               if (factor < 0.35) {
+                   poolIds.push(pet.id);
+               }
+           });
+           if (poolIds.length < 15) {
+               poolIds = ALL_PETS.slice(0, 20).map(p => p.id);
+           }
+
+
+           EGGS_DATA.push({
+               index: i,
+               name: EGG_NAMES[i],
+               cost: baseCost,
+               reqReverses: requiredReverses,
+               pool: poolIds
+           });
+       }
+
+
+       class Game {
+           constructor() {
+               this.coins = 0;
+               this.totalMultiplier = 1;
+               this.reverses = 0;
+               this.pityCount = 50;
+               this.pityTriggered = false; // 初回限定制御用
+               this.upgradeLevels = { click: 0, auto: 0, mult: 0, speed: 0 };
+               this.ownedPets = {}; // id -> 所持数
+               this.equippedPetIds = []; // 最大4枠の装着配列
+               this.dex = {}; // id -> true
+               this.selectedEggIdx = 0;
+
+
+               this.spacePressed = false;
+               this.spaceInterval = null;
+               this.autoClickInterval = null;
+           }
+
+
+           init() {
+               this.loadGame();
+               this.setupEggSelector();
+               this.setupEventListeners();
+               this.syncAutoClickerTimer();
+               this.startHeartbeat();
+               this.renderAll();
+           }
+
+
+           setupEggSelector() {
+               const sel = document.getElementById('eggSelector');
+               sel.innerHTML = '';
+               EGGS_DATA.forEach(egg => {
+                   const opt = document.createElement('option');
+                   opt.value = egg.index;
+                   opt.textContent = `${egg.name} (必要再生数: ${egg.reqReverses}回)`;
+                   sel.appendChild(opt);
+               });
+           }
+
+
+           onEggChange() {
+               this.selectedEggIdx = parseInt(document.getElementById('eggSelector').value);
+               this.updateUI();
+           }
+
+
+           getUpgradeCost(type) {
+               const lvl = this.upgradeLevels[type];
+               const baseCosts = { click: 10, auto: 50, mult: 500, speed: 1000 };
+               const scaleFactors = { click: 1.35, auto: 1.45, mult: 2.1, speed: 1.6 };
+               return baseCosts[type] * Math.pow(scaleFactors[type], lvl);
+           }
+
+
+           getUpgradeEffect(type) {
+               const lvl = this.upgradeLevels[type];
+               if (type === 'click') return lvl * 2 + 1;
+               if (type === 'auto') return lvl * 5;
+               if (type === 'mult') return 1 + (lvl * 0.1);
+               if (type === 'speed') return 10 + (lvl * 2); // オートクリッカー秒間速度
+           }
+
+
+           getReverseRequirement() {
+               return 100000 * Math.pow(10, this.reverses);
+           }
+
+
+           getEquippedBonus() {
+               let extraMultiplier = 0;
+               let extraCps = 0;
+               this.equippedPetIds.forEach(id => {
+                   const pet = ALL_PETS.find(p => p.id === id);
+                   if (pet) {
+                       extraMultiplier += pet.cpc * 0.01; // CPC数値を％マルチとして上乗せ
+                       extraCps += pet.cps;
+                   }
+               });
+               return { mult: extraMultiplier, cps: extraCps };
+           }
+
+
+           getCpc() {
+               const base = this.getUpgradeEffect('click');
+               const bonus = this.getEquippedBonus();
+               const totalMult = this.getUpgradeEffect('mult') * this.totalMultiplier * (1 + bonus.mult);
+               return Math.max(1, base * totalMult);
+           }
+
+
+           getCps() {
+               const base = this.getUpgradeEffect('auto');
+               const bonus = this.getEquippedBonus();
+               const totalMult = this.getUpgradeEffect('mult') * this.totalMultiplier;
+               return (base + bonus.cps) * totalMult;
+           }
+
+
+           clickCoin(e) {
+               const gain = this.getCpc();
+               this.coins += gain;
+
+
+               const coinVis = document.getElementById('coinVisual');
+               coinVis.classList.add('pressed');
+               setTimeout(() => coinVis.classList.remove('pressed'), 50);
+
+
+               let posX = 110, posY = 110;
+               if (e && e.clientX) {
+                   const rect = coinVis.getBoundingClientRect();
+                   posX = e.clientX - rect.left;
+                   posY = e.clientY - rect.top;
+               }
+               this.createFloatingText(`+${formatNumber(gain)}`, posX, posY);
+               this.updateUI();
+           }
+
+
+           createFloatingText(text, x, y) {
+               const wrapper = document.getElementById('coinButton');
+               const span = document.createElement('span');
+               span.className = 'click-float';
+               span.textContent = text;
+               span.style.left = `${x}px`;
+               span.style.top = `${y}px`;
+               span.style.color = 'var(--astro-gold)';
+               wrapper.appendChild(span);
+               setTimeout(() => span.remove(), 600);
+           }
+
+
+           buyUpgrade(type) {
+               const cost = this.getUpgradeCost(type);
+               if (this.coins >= cost) {
+                   this.coins -= cost;
+                   this.upgradeLevels[type]++;
+                   if (type === 'speed') {
+                       this.syncAutoClickerTimer();
+                   }
+                   this.updateUI();
+                   this.renderInfiniteUpgrades();
+               }
+           }
+
+
+           syncAutoClickerTimer() {
+               if (this.autoClickInterval) clearInterval(this.autoClickInterval);
+               const speed = this.getUpgradeEffect('speed');
+               document.getElementById('acSpeedLabel').textContent = `速度: 秒間${speed.toFixed(1)}回`;
+              
+               const ms = 1000 / speed;
+               this.autoClickInterval = setInterval(() => {
+                   if (document.getElementById('autoClickToggle').checked) {
+                       this.clickCoin();
+                   }
+               }, ms);
+           }
+
+
+           buyGacha(amount) {
+               const egg = EGGS_DATA[this.selectedEggIdx];
+               if (this.reverses < egg.reqReverses) {
+                   document.getElementById('gachaResult').innerHTML = `<span style="color:#ef5350;">🔒 この卵はまだロックされています！</span>`;
+                   return;
+               }
+
+
+               const totalCost = egg.cost * amount;
+               if (this.coins < totalCost) {
+                   document.getElementById('gachaResult').innerHTML = `<span style="color:#ef5350;">コインが足りません！</span>`;
+                   return;
+               }
+
+
+               this.coins -= totalCost;
+               let results = [];
+
+
+               for (let a = 0; a < amount; a++) {
+                   let rolledPet = null;
+
+
+                   // 初回限定51回目のEternal確定判定
+                   if (!this.pityTriggered) {
+                       this.pityCount--;
+                       if (this.pityCount <= 0) {
+                           const eternalPool = ALL_PETS.filter(p => p.rarity === 'ETERNAL');
+                           rolledPet = eternalPool[Math.floor(Math.random() * eternalPool.length)];
+                           this.pityTriggered = true;
+                       }
+                   }
+
+
+                   // 通常ガチャ処理
+                   if (!rolledPet) {
+                       const poolPets = ALL_PETS.filter(p => egg.pool.includes(p.id));
+                      
+                       // レア度別の簡易ウェイト重み付け分配
+                       const weights = { COMMON: 100, RARE: 50, EPIC: 20, LEGENDARY: 8, MYSTIC: 2, SECRET: 0.4, ETERNAL: 0.05 };
+                       let totalWeight = 0;
+                       poolPets.forEach(p => totalWeight += weights[p.rarity] || 1);
+
+
+                       let rand = Math.random() * totalWeight;
+                       for (let p of poolPets) {
+                           const w = weights[p.rarity] || 1;
+                           if (rand <= w) {
+                               rolledPet = p;
+                               break;
+                           }
+                           rand -= w;
+                       }
+                       if (!rolledPet) rolledPet = poolPets[0];
+                   }
+
+
+                   this.ownedPets[rolledPet.id] = (this.ownedPets[rolledPet.id] || 0) + 1;
+                   this.dex[rolledPet.id] = true;
+
+
+                   const rMeta = RARITIES[rolledPet.rarity];
+                   results.push(`<span style="color:${rMeta.color}; font-weight:bold;">[${rMeta.name}] ${rolledPet.name}</span>`);
+               }
+
+
+               document.getElementById('gachaResult').innerHTML = results.join('<br>');
+               this.updateUI();
+               this.renderOwnedPets();
+               this.renderDex();
+           }
+
+
+           equipPet(id) {
+               if (this.equippedPetIds.includes(id)) return;
+               if (this.equippedPetIds.length >= 4) {
+                   alert("装着枠は最大4枠までです！");
+                   return;
+               }
+               this.equippedPetIds.push(id);
+               this.updateUI();
+               this.renderOwnedPets();
+           }
+
+
+           unequipPet(id) {
+               this.equippedPetIds = this.equippedPetIds.filter(pid => pid !== id);
+               this.updateUI();
+               this.renderOwnedPets();
+           }
+
+
+           sellPet(id) {
+               const count = this.ownedPets[id] || 0;
+               if (count <= 0) return;
+
+
+               const pet = ALL_PETS.find(p => p.id === id);
+               if (!pet) return;
+
+
+               // ベース売却価格にリバース回数を乗算加算
+               const baseSellValues = { COMMON: 50, RARE: 200, EPIC: 800, LEGENDARY: 4000, MYSTIC: 20000, SECRET: 150000, ETERNAL: 1000000 };
+               const sellGain = (baseSellValues[pet.rarity] || 50) * (1 + this.reverses * 5);
+
+
+               this.ownedPets[id]--;
+               if (this.ownedPets[id] <= 0) {
+                   delete this.ownedPets[id];
+                   this.unequipPet(id);
+               }
+
+
+               this.coins += sellGain;
+               this.updateUI();
+               this.renderOwnedPets();
+           }
+
+
+           executeReverse() {
+               const req = this.getReverseRequirement();
+               if (this.coins >= req) {
+                   this.reverses++;
+                   this.totalMultiplier *= 5;
+
+
+                   this.coins = 0;
+                   this.upgradeLevels = { click: 0, auto: 0, mult: 0, speed: 0 };
+                   this.equippedPetIds = [];
+
+
+                   this.syncAutoClickerTimer();
+                   this.renderAll();
+                   alert("宇宙が再生され、すべての生産効率が5倍になりました！");
+               }
+           }
+
+
+           openOddsModal() {
+               const modal = document.getElementById('oddsModal');
+               const body = document.getElementById('oddsModalBody');
+               const egg = EGGS_DATA[this.selectedEggIdx];
+              
+               let html = `<p style="margin-bottom:10px; font-weight:bold; color:var(--astro-gold);">${egg.name} の排出ラインナップ</p>`;
+              
+               const poolPets = ALL_PETS.filter(p => egg.pool.includes(p.id));
+               const weights = { COMMON: 100, RARE: 50, EPIC: 20, LEGENDARY: 8, MYSTIC: 2, SECRET: 0.4, ETERNAL: 0.05 };
+               let totalWeight = 0;
+               poolPets.forEach(p => totalWeight += weights[p.rarity] || 1);
+
+
+               poolPets.forEach(p => {
+                   const w = weights[p.rarity] || 1;
+                   const pct = ((w / totalWeight) * 100).toFixed(3);
+                   html += `
+                       <div class="odds-row">
+                           <span style="color:${RARITIES[p.rarity].color}">[${RARITIES[p.rarity].name}] ${p.name}</span>
+                           <span style="color:var(--text-sub)">${pct}%</span>
+                       </div>
+                   `;
+               });
+
+
+               body.innerHTML = html;
+               modal.classList.add('active');
+           }
+
+
+           closeOddsModal() {
+               document.getElementById('oddsModal').classList.remove('active');
+           }
+
+
+           startHeartbeat() {
+               setInterval(() => {
+                   const cps = this.getCps();
+                   if (cps > 0) {
+                       this.coins += cps / 10;
+                       this.updateUI();
+                   }
+               }, 100);
+
+
+               setInterval(() => this.saveGame(), 10000);
+           }
+
+
+           setupEventListeners() {
+               const coinBtn = document.getElementById('coinButton');
+               coinBtn.addEventListener('mousedown', (e) => this.clickCoin(e));
+
+
+               window.addEventListener('keydown', (e) => {
+                   if (e.code === 'Space') {
+                       e.preventDefault();
+                       if (!this.spacePressed) {
+                           this.spacePressed = true;
+                           this.clickCoin();
+                           if (!this.spaceInterval) {
+                               this.spaceInterval = setInterval(() => this.clickCoin(), 35);
+                           }
+                       }
+                   }
+               });
+
+
+               window.addEventListener('keyup', (e) => {
+                   if (e.code === 'Space') {
+                       this.spacePressed = false;
+                       if (this.spaceInterval) {
+                           clearInterval(this.spaceInterval);
+                           this.spaceInterval = null;
+                       }
+                   }
+               });
+           }
+
+
+           updateUI() {
+               document.getElementById('coinDisplay').textContent = formatNumber(this.coins);
+               document.getElementById('cpsDisplay').textContent = `秒間自動生産 (CPS): ${formatNumber(this.getCps())}`;
+               document.getElementById('cpcDisplay').textContent = `1クリック: ${formatNumber(this.getCpc())}`;
+               document.getElementById('multiplierDisplay').textContent = `永続生産倍率: x${formatNumber(this.totalMultiplier)}`;
+               document.getElementById('reversesDisplay').textContent = `再生回数: ${this.reverses} 回`;
+
+
+               if (this.pityTriggered) {
+                   document.getElementById('gachaPity').textContent = `初回特典終了 (通常の確率でEternalがドロップします)`;
+               } else {
+                   document.getElementById('gachaPity').textContent = `初回特典: あと${this.pityCount}回で最高レアEternal確定！`;
+               }
+
+
+               const egg = EGGS_DATA[this.selectedEggIdx];
+               document.getElementById('gachaCostDisplay').textContent = `価格: 1回 ${formatNumber(egg.cost)} コイン`;
+
+
+               const req = this.getReverseRequirement();
+               const btn = document.getElementById('reverseBtn');
+               const cond = document.getElementById('reverseCondition');
+               cond.textContent = `リバース条件: ${formatNumber(req)} コイン`;
+              
+               if (this.coins >= req) {
+                   btn.classList.remove('disabled');
+               } else {
+                   btn.classList.add('disabled');
+               }
+
+
+               // 各卵セレクトオプションの簡易ロック状態同期
+               const sel = document.getElementById('eggSelector');
+               for (let i = 0; i < sel.options.length; i++) {
+                   const eggD = EGGS_DATA[i];
+                   if (this.reverses < eggD.reqReverses) {
+                       sel.options[i].disabled = true;
+                   } else {
+                       sel.options[i].disabled = false;
+                   }
+               }
+
+
+               ['click', 'auto', 'mult', 'speed'].forEach(type => {
+                   const btn = document.getElementById(`btn-upg-${type}`);
+                   if (btn) {
+                       const cost = this.getUpgradeCost(type);
+                       btn.disabled = (this.coins < cost);
+                   }
+               });
+
+
+               // 装着枠サマリー更新
+               const bonus = this.getEquippedBonus();
+               document.getElementById('slotTitleDisplay').textContent = `📌 **装着枠: ${this.equippedPetIds.length} / 4**`;
+               document.getElementById('slotStatsDisplay').textContent = `合計倍率ボーナス: +${(bonus.mult * 100).toFixed(0)}% | 合計自動生産: ${formatNumber(bonus.cps)} CPS`;
+           }
+
+
+           renderAll() {
+               this.renderInfiniteUpgrades();
+               this.renderOwnedPets();
+               this.renderDex();
+               this.updateUI();
+           }
+
+
+           renderInfiniteUpgrades() {
+               const container = document.getElementById('infiniteUpgradesContainer');
+               container.innerHTML = '';
+
+
+               const specs = [
+                   { type: 'click', title: '1クリック強化', desc: '1クリックのパワーを直接増加させます' },
+                   { type: 'auto', title: '秒間自動生産', desc: 'クリックしなくても自動でコインを生産します' },
+                   { type: 'mult', title: '生産倍率', desc: '全体の生産効率をパーセンテージで乗算します' },
+                   { type: 'speed', title: '連打速度', desc: 'オートクリッカーマクロの秒間稼働速度を強化します' }
+               ];
+
+
+               specs.forEach(s => {
+                   const cost = this.getUpgradeCost(s.type);
+                   const lvl = this.upgradeLevels[s.type];
+
+
+                   const div = document.createElement('div');
+                   div.className = 'shop-item';
+                   div.innerHTML = `
+                       <div class="item-info">
+                           <span class="item-title">${s.title}</span>
+                           <span class="item-desc">${s.desc}</span>
+                           <span class="item-level">Lv.${lvl}</span>
+                       </div>
+                       <button class="buy-btn" id="btn-upg-${s.type}" onclick="game.buyUpgrade('${s.type}')">
+                           ${formatNumber(cost)} コイン
+                       </button>
+                   `;
+                   container.appendChild(div);
+               });
+           }
+
+
+           renderOwnedPets() {
+               const container = document.getElementById('ownedPetsContainer');
+               container.innerHTML = '';
+               let hasPet = false;
+
+
+               ALL_PETS.forEach(pet => {
+                   const count = this.ownedPets[pet.id] || 0;
+                   if (count > 0) {
+                       hasPet = true;
+                       const isEquipped = this.equippedPetIds.includes(pet.id);
+                       const card = document.createElement('div');
+                       card.className = 'pet-row-card';
+                       card.style.borderLeftColor = RARITIES[pet.rarity].color;
+                       card.innerHTML = `
+                           <div class="pet-meta">
+                               <span class="pet-name-line" style="color:${RARITIES[pet.rarity].color}">${pet.name} (x${count})</span>
+                               <span class="pet-effect-line">[${RARITIES[pet.rarity].name}] クリックボーナス:+${pet.cpc}% / 自動生産:+${formatNumber(pet.cps)} CPS</span>
+                           </div>
+                           <div class="pet-actions">
+                               ${isEquipped ?
+                                   `<button class="p-btn btn-unequip" onclick="game.unequipPet('${pet.id}')">装着解除</button>` :
+                                   `<button class="p-btn btn-equip" onclick="game.equipPet('${pet.id}')">装着する</button>`
+                               }
+                               <button class="p-btn btn-sell" onclick="game.sellPet('${pet.id}')">売却</button>
+                           </div>
+                       `;
+                       container.appendChild(card);
+                   }
+               });
+
+
+               if (!hasPet) {
+                   container.innerHTML = `<p style="color:var(--text-sub); text-align:center; padding:10px;">所持している相棒はいません。ガチャを引きましょう！</p>`;
+               }
+           }
+
+
+           renderDex() {
+               const container = document.getElementById('dexContainer');
+               container.innerHTML = '';
+               let discovered = 0;
+
+
+               ALL_PETS.forEach(pet => {
+                   const isKnown = this.dex[pet.id];
+                   if (isKnown) discovered++;
+
+
+                   const card = document.createElement('div');
+                   card.className = 'pet-row-card';
+                   card.style.opacity = isKnown ? '1' : '0.25';
+                   card.style.borderLeftColor = isKnown ? RARITIES[pet.rarity].color : '#444';
+
+
+                   if (isKnown) {
+                       card.innerHTML = `
+                           <div class="pet-meta">
+                               <span class="pet-name-line" style="color:${RARITIES[pet.rarity].color}">${pet.name}</span>
+                               <span class="pet-effect-line">[${RARITIES[pet.rarity].name}] クリックボーナス:+${pet.cpc}% / 自動生産:+${formatNumber(pet.cps)} CPS</span>
+                           </div>
+                       `;
+                   } else {
+                       card.innerHTML = `
+                           <div class="pet-meta">
+                               <span class="pet-name-line" style="color:#666">??? [未発見]</span>
+                               <span class="pet-effect-line">レア度: ${RARITIES[pet.rarity].name}</span>
+                           </div>
+                       `;
+                   }
+                   container.appendChild(card);
+               });
+
+
+               const percent = Math.floor((discovered / ALL_PETS.length) * 100);
+               document.getElementById('dexPercent').textContent = percent;
+               document.getElementById('dexProgressTitle').textContent = `📊 **図鑑収集率: ${percent}%** (${discovered} / ${ALL_PETS.length})`;
+           }
+
+
+           switchTab(tabId) {
+               document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+               document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+              
+               const eventBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+               if (eventBtn) eventBtn.classList.add('active');
+              
+               document.getElementById(`tab-${tabId}`).classList.add('active');
+           }
+
+
+           saveGame() {
+               const data = {
+                   coins: this.coins,
+                   totalMultiplier: this.totalMultiplier,
+                   reverses: this.reverses,
+                   pityCount: this.pityCount,
+                   pityTriggered: this.pityTriggered,
+                   upgradeLevels: this.upgradeLevels,
+                   ownedPets: this.ownedPets,
+                   dex: this.dex,
+                   equippedPetIds: this.equippedPetIds
+               };
+               localStorage.setItem('astro_clicker_save_final_v2', JSON.stringify(data));
+           }
+
+
+           loadGame() {
+               const raw = localStorage.getItem('astro_clicker_save_final_v2');
+               if (!raw) return;
+               try {
+                   const data = JSON.parse(raw);
+                   this.coins = data.coins || 0;
+                   this.totalMultiplier = data.totalMultiplier || 1;
+                   this.reverses = data.reverses || 0;
+                   this.pityCount = data.pityCount !== undefined ? data.pityCount : 50;
+                   this.pityTriggered = data.pityTriggered || false;
+                   this.upgradeLevels = data.upgradeLevels || { click: 0, auto: 0, mult: 0, speed: 0 };
+                   this.ownedPets = data.ownedPets || {};
+                   this.dex = data.dex || {};
+                   this.equippedPetIds = data.equippedPetIds || [];
+               } catch(e) {
+                   console.error("セーブデータの読み込みに失敗しました", e);
+               }
+           }
+       }
+
+
+       const game = new Game();
+       window.onload = () => game.init();
+   </script>
+</body>
+</html>
+
+
+
